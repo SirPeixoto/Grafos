@@ -59,27 +59,40 @@ class Grafo:
         nome_cidade2 = input('2ª Cidade: ').strip().title()
         if nome_cidade1 in self.cidades and nome_cidade2 in self.cidades:
 
-            for aresta in self.conexoes:
-                if (aresta.cidade1 == self.cidades[nome_cidade1] and aresta.cidade2 == self.cidades[nome_cidade2]) or \
-                (aresta.cidade1 == self.cidades[nome_cidade2] and aresta.cidade2 == self.cidades[nome_cidade1]):
-                    print('\nEssa conexão já existe!\n')
-                    return
+            vertice1 = self.cidades[nome_cidade1]
+            vertice2 = self.cidades[nome_cidade2] 
+
+            conexao_existe = any(
+                (aresta.cidade1 == vertice1 and aresta.cidade2 == vertice2) or
+                (aresta.cidade1 == vertice2 and aresta.cidade2 == vertice1)
+                for aresta in self.conexoes
+            )
+
+            if conexao_existe:
+                print('\nEssa conexão já existe!\n')
+                return
                 
             distancia = float(input('Distância em Km: '))
 
-            vertice1 = self.cidades[nome_cidade1]
-            vertice2 = self.cidades[nome_cidade2] 
 
             nova_aresta = Aresta(vertice1, vertice2, distancia)
             self.conexoes.append(nova_aresta)
 
-            vertice1.vizinhanca.append(vertice2)
-            vertice2.vizinhanca.append(vertice1)
+            if vertice2 not in vertice1.vizinhanca:
+                vertice1.vizinhanca.append(vertice2)
+            if vertice1 not in vertice2.vizinhanca:
+                vertice2.vizinhanca.append(vertice1)
 
-            vertice1.conexoes.append(nova_aresta)
-            vertice2.conexoes.append(nova_aresta)
+            if nova_aresta not in vertice1.conexoes:
+                vertice1.conexoes.append(nova_aresta)
+            if nova_aresta not in vertice2.conexoes:
+                vertice2.conexoes.append(nova_aresta)
 
             print(f'Conexão entre {vertice1.nomeCidade} e {vertice2.nomeCidade} de {distancia} km cadastrada com sucesso.\n')
+
+            with open('conexoes.csv', 'a', encoding='UTF-8', newline='') as arquivo:
+                escritor = csv.writer(arquivo)
+                escritor.writerow([vertice1.nomeCidade, vertice2.nomeCidade, f'{distancia}km'])
 
         else:
             print('Uma das cidades não foi encontrada!')
@@ -102,6 +115,42 @@ class Grafo:
                 print(f'- {aresta.info_aresta()}')
             print() 
 
+    def importar_conexoes(self):
+        with open('conexoes.csv', 'r', encoding='UTF-8') as arquivo:
+            for linha in arquivo:
+                linhas = linha.strip().split(',')
+                if len(linhas) == 3:
+                    cidade1 = linhas[0].strip().lower().title()
+                    cidade2 = linhas[1].strip().lower().title()
+                    distancia = float(linhas[2].replace('km','').strip())
+                    if cidade1 not in self.cidades:
+                        self.cidades[cidade1] = Vertice(cidade1)
+                    if cidade2 not in self.cidades:
+                        self.cidades[cidade2] = Vertice(cidade2)
+
+                    vertice1 = self.cidades[cidade1]
+                    vertice2 = self.cidades[cidade2]
+
+                    conexao_existe = any(
+                        (aresta.cidade1 == vertice1 and aresta.cidade2 == vertice2) or
+                        (aresta.cidade1 == vertice2 and aresta.cidade2 == vertice1)
+                        for aresta in self.conexoes
+                    )
+
+                    if not conexao_existe:
+                        nova_aresta = Aresta(vertice1, vertice2, distancia)
+                        self.conexoes.append(nova_aresta)
+
+                        if vertice2 not in vertice1.vizinhanca:
+                            vertice1.vizinhanca.append(vertice2)
+                        if vertice1 not in vertice2.vizinhanca:
+                            vertice2.vizinhanca.append(vertice1)
+
+                        if nova_aresta not in vertice1.conexoes:
+                            vertice1.conexoes.append(nova_aresta)
+                        if nova_aresta not in vertice2.conexoes:
+                            vertice2.conexoes.append(nova_aresta)
+        print('\nImportação concluída com sucesso!\n')
     
 def menu():
     grafo = Grafo()
@@ -112,6 +161,7 @@ def menu():
         print('3 - Listar cidades')
         print('4 - Listar conexões')
         print('5 - Consultar cidade')
+        print('6 - Importar conexões do csv')
         print('0 - Sair')
 
         opcao = input('Selecione uma opção: ')
@@ -137,16 +187,20 @@ def menu():
                 if nome in grafo.cidades:
                     cidade = grafo.cidades[nome]
 
-                if alter == '1':
-                    cidade.info_vertice()
-                elif alter == '2':
-                    cidade.info_vizinhos()
-                elif alter == '3':
-                    cidade.info_conexoes()
-                elif alter == '0':
-                    break
+                    if alter == '1':
+                        cidade.info_vertice()
+                    elif alter == '2':
+                        cidade.info_vizinhos()
+                    elif alter == '3':
+                        cidade.info_conexoes()
+                    elif alter == '0':
+                        break
+                    else:
+                        print('Opção inválida!')
                 else:
-                    print('Opção inválida!')
+                    print('Cidade não encontrada!')
+        elif opcao == '6':
+            grafo.importar_conexoes()
         elif opcao == '0':
             break
         else:
