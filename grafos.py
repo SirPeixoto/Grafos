@@ -15,9 +15,20 @@ class Vertice:
         if not self.vizinhanca:
             print(f'\n{self.nomeCidade} não possui vizinhos cadastrados.\n')
         else:
-            print(f'\nVizinhos de {self.nomeCidade}:')
+            vizinhos_dict = {}
+
             for vizinho in self.vizinhanca:
-                print(f'- {vizinho.nomeCidade}')
+                for aresta in self.conexoes:
+                    if (aresta.cidade1 == self and aresta.cidade2 == vizinho) or \
+                        (aresta.cidade2 == self and aresta.cidade1 == vizinho):
+                        vizinhos_dict[vizinho.nomeCidade] = aresta.distancia
+                        break
+
+            vizinhos_ordenados = sorted(vizinhos_dict.items(), key=lambda item: item[1])
+
+            print(f'\nVizinhos de {self.nomeCidade}: ')
+            for nome_vizinho, distancia in vizinhos_ordenados:
+                print(f'- {nome_vizinho} ({distancia} km)')
             print()
 
 
@@ -102,7 +113,7 @@ class Grafo:
             print('\nNenhuma cidade encontrada.\n')
         else:
             print('\nCidades encontradas:')
-            for nome in self.cidades:
+            for nome in sorted(self.cidades.keys()):
                 print(f'- {nome}')
             print()
 
@@ -150,13 +161,13 @@ class Grafo:
                             vertice1.conexoes.append(nova_aresta)
                         if nova_aresta not in vertice2.conexoes:
                             vertice2.conexoes.append(nova_aresta)
-        print('\nImportação concluída com sucesso!\n')
+        print('\nImportação concluída com sucesso!')
     
 def menu():
     grafo = Grafo()
 
     while True:
-        print('1 - Cadastrar cidade')
+        print('\n1 - Cadastrar cidade')
         print('2 - Cadastrar conexão')
         print('3 - Listar cidades')
         print('4 - Listar conexões')
@@ -181,7 +192,10 @@ def menu():
                 print('3 - Conexões')
                 print('0 - Sair')
 
-                alter = input('O que deseja verificar? ')
+                alter = input('\nO que deseja verificar? ')
+
+                if alter == '0':
+                    break
 
                 nome = input('\nDigite o nome da cidade: ').strip().title()
                 if nome in grafo.cidades:
@@ -193,8 +207,6 @@ def menu():
                         cidade.info_vizinhos()
                     elif alter == '3':
                         cidade.info_conexoes()
-                    elif alter == '0':
-                        break
                     else:
                         print('Opção inválida!')
                 else:
